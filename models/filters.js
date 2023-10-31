@@ -1,9 +1,10 @@
-const pagination = (contactsLength, page, limit) => {
+
+const pagination = (productsLength, page, limit) => {
   let pagValues = {};
-  const pages = limit > contactsLength ? 1 : Math.ceil(contactsLength / limit);
+  const pages = limit > productsLength ? 1 : Math.ceil(productsLength / limit);
   if (page > pages) {
     const li = (pages - 1) * limit;
-    const ls = contactsLength + 1;
+    const ls = productsLength + 1;
     pagValues = {
       pages,
       limitInf: li,
@@ -11,7 +12,7 @@ const pagination = (contactsLength, page, limit) => {
     };
   } else {
     const limitSup =
-      page * limit > contactsLength ? contactsLength : page * limit;
+      page * limit > productsLength ? productsLength : page * limit;
     const limitInf = limit >= limitSup ? 0 : limitSup - limit;
     pagValues = {
       pages,
@@ -22,28 +23,24 @@ const pagination = (contactsLength, page, limit) => {
   return pagValues;
 };
 
-const filterContacts = (list, { favorite = null, page = 1, limit = 5 }) => {
-  const contactsGroupOne =
-    favorite === null
-      ? list
-      : list.filter((contact) => contact.favorite === JSON.parse(favorite));
+const filterProducts = (list, {  page = 1, limit = 4 }) => {
   const { pages, limitInf, limitSup } = pagination(
-    contactsGroupOne.length,
+    list.length,
     page,
     limit
   );
-  const contactsGroupTwo = contactsGroupOne.slice(limitInf, limitSup);
+  const ProductsGroup = list.slice(limitInf, limitSup);
   return {
     page: parseInt(page),
     limit: parseInt(limit),
     pages,
     limitInf,
     limitSup,
-    length: contactsGroupOne.length,
-    contacts: contactsGroupTwo,
+    length: list.length,
+    products: ProductsGroup,
   };
 };
 
 module.exports = {
-  filterContacts,
+  filterProducts,
 };

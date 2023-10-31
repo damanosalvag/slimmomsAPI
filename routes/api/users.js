@@ -3,26 +3,31 @@ const Joi = require("joi");
 const jwt = require("jsonwebtoken");
 const auth = require("../../config/auth.js");
 require("../../config/config-passport.js");
+const { calculator, notHealty } = require("../../models/calculator.js");
 
 const User = require("../../schemas/users.js");
 
 const router = express.Router();
 
-const schemaEmailPassword = Joi.object({
+const schemaSignUp = Joi.object({
+  name: Joi.string().min(3).max(30).required(),
   email: Joi.string().email().required(),
   password: Joi.string()
     .min(8)
     .max(20)
     .regex(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).*$/)
     .required(),
+  confirmPassword: Joi.string().valid(Joi.ref("password")).required(),
 });
 
 const validateEmailPassword = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    await schemaEmailPassword.validateAsync({
+    const { name, email, password, confirmPassword } = req.body;
+    await schemaSignUp.validateAsync({
+      name,
       email,
       password,
+      confirmPassword,
     });
     next();
   } catch (error) {
@@ -35,20 +40,20 @@ const validateEmailPassword = async (req, res, next) => {
 };
 
 router.post("/signup", validateEmailPassword, async (req, res) => {
-  const { email, password } = req.body;
+  const { name, email, password } = req.body;
   console.log("body", req.body);
   const user = await User.findOne({ email });
   if (user) {
     return res.status(409).json({ message: "Email in use" });
   }
   try {
-    const newUser = new User({ email });
+    const newUser = new User({ name, email });
     newUser.setPassword(password);
     await newUser.save();
     res.status(201).json({
       user: {
+        name,
         email,
-        subscription: "starter",
       },
     });
   } catch (error) {
@@ -57,14 +62,22 @@ router.post("/signup", validateEmailPassword, async (req, res) => {
   }
 });
 
-router.post("/login", validateEmailPassword, async (req, res) => {
+router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   const user = await User.findOne({ email });
   if (!user || !user.checkPassword(password)) {
     return res.status(401).json({ message: "Email or password is wrong" });
   }
-
+  const {
+    name,
+    blood,
+    height,
+    age,
+    weight_current,
+    weight_desired,
+    daily_rate,
+  } = user;
   const token = jwt.sign({ id: user._id }, process.env.SECRET, {
     expiresIn: "1d",
   });
@@ -73,33 +86,68 @@ router.post("/login", validateEmailPassword, async (req, res) => {
   res.json({
     token,
     user: {
+      name,
       email,
-      subscription: "starter",
+      blood,
+      height,
+      age,
+      weight_current,
+      weight_desired,
+      daily_rate,
     },
   });
 });
 
-router.get("/logout", auth, async (req, res) => {
-  const { _id } = req.user;
-  try {
-    const response = await User.updateOne({ _id }, { token: null });
-    if (response.acknowledged) {
-      if (response.modifiedCount === 0) {
-        return res.json({ message: "The user has been loggead out" });
-      } else {
-        console.log("user logout");
-        return res.status(204).end();
-      }
-    }
-  } catch (error) {
-    res.status(500).json({ message: error });
-  }
-});
+// router.get("/logout", auth, async (req, res) => {
+//   const { _id } = req.user;
+//   try {
+//     const response = await User.updateOne({ _id }, { token: null });
+//     if (response.acknowledged) {
+//       if (response.modifiedCount === 0) {
+//         return res.json({ message: "The user has been loggead out" });
+//       } else {
+//         console.log("user logout");
+//         return res.status(204).end();
+//       }
+//     }
+//   } catch (error) {
+//     res.status(500).json({ message: error });
+//   }
+// });
 
 router.get("/current", auth, async (req, res, next) => {
-  const { email, subscription } = req.user;
-  res.status(200).json({ email, subscription });
-  next();
+  const {
+    email,
+    name,
+    blood,
+    height,
+    age,
+    weight_current,
+    weight_desired,
+    daily_rate,
+  } = req.user;
+  res.status(200).json({
+    email,
+    name,
+    blood,
+    height,
+    age,
+    weight_current,
+    weight_desired,
+    daily_rate,
+  });
+  // next();
+});
+router.patch("/calculator", auth, async (req, res) => {
+  try {
+    const result = await calculator(req.body, req.user._id);
+    res.status(201).json(result);
+  } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(400).json({ message: "Invalid contact ID" });
+    }
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 module.exports = router;

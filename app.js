@@ -4,7 +4,8 @@ const cors = require("cors");
 require("./config/config-passport");
 
 const usersRouter = require("./routes/api/users");
-const contactsRouter = require("./routes/api/contacts.js");
+const productsRouter = require("./routes/api/products.js");
+const daysRouter = require("./routes/api/days.js");
 
 const app = express();
 
@@ -14,9 +15,9 @@ app.use(logger(formatsLogger));
 app.use(cors());
 app.use(express.json());
 
-
 app.use("/api/users", usersRouter);
-app.use("/api/contacts", contactsRouter);
+app.use("/api/products", productsRouter);
+app.use("/api/days", daysRouter);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Not found" });
