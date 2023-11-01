@@ -23,7 +23,7 @@ const pagination = (productsLength, page, limit) => {
   return pagValues;
 };
 
-const filterProducts = (list, {  page = 1, limit = 4 }) => {
+const filterProducts = (list, {  page, limit }) => {
   const { pages, limitInf, limitSup } = pagination(
     list.length,
     page,

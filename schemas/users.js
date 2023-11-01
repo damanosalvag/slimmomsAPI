@@ -14,28 +14,29 @@ const userSchema = new Schema({
   },
   blood: {
     type: Number,
-    default: null,
+    default: 1,
   },
   height: {
     type: Number,
-    default: null,
+    default: 170,
   },
   age: {
     type: Number,
-    default: null,
+    default: 30,
   },
-  weight_current: {
+  weightCurrent: {
     type: Number,
-    default: null,
+    default: 100,
   },
-  weight_desired: {
+  weightDesired: {
     type: Number,
-    default: null,
+    default: 70,
   },
-  daily_rate: {
+  dailyRate: {
     type: Number,
-    default: null,
+    default: 2000,
   },
+  notAllowedProducts:[String],
   token: {
     type: String,
     default: null,

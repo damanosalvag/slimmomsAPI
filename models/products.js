@@ -16,8 +16,8 @@ const getUnhealthyList = async (typeBlood, query) => {
   })) || {
     message: "products, no found",
   };
-  const listProducts = filterProducts(findProducts, query);
-  return listProducts;
+  const listProductsUnHealthy = filterProducts(findProducts, query);
+  return listProductsUnHealthy;
 };
 
 // const addContact = async (body, ownerId) => {

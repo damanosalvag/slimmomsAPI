@@ -3,14 +3,14 @@ const { Schema, model } = require("mongoose");
 const summarySchema = new Schema(
   {
     date: Date,
-    user_id: {
+    userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
     },
-    daily_rate: Number,
-    left: Number,
-    consumed: Number,
-    percentage_of_normal: Number,
+    dailyRate: { type: Number, default: 2000 },
+    left: { type: Number, default: 2000 },
+    consumed: { type: Number, default: 0 },
+    percentOfDailyRate: { type: Number, default: 0 },
   },
   { versionKey: false, timestamps: true }
 );

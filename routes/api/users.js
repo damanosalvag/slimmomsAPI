@@ -3,9 +3,10 @@ const Joi = require("joi");
 const jwt = require("jsonwebtoken");
 const auth = require("../../config/auth.js");
 require("../../config/config-passport.js");
-const { calculator, notHealty } = require("../../models/calculator.js");
+const { calculator } = require("../../models/calculator.js");
 
 const User = require("../../schemas/users.js");
+const Summary = require("../../schemas/summary.js");
 
 const router = express.Router();
 
@@ -50,6 +51,8 @@ router.post("/signup", validateEmailPassword, async (req, res) => {
     const newUser = new User({ name, email });
     newUser.setPassword(password);
     await newUser.save();
+    const newSummary = new Summary({ date: new Date(), userId: newUser._id });
+    await newSummary.save();
     res.status(201).json({
       user: {
         name,
@@ -69,19 +72,21 @@ router.post("/login", async (req, res) => {
   if (!user || !user.checkPassword(password)) {
     return res.status(401).json({ message: "Email or password is wrong" });
   }
-  const {
-    name,
-    blood,
-    height,
-    age,
-    weight_current,
-    weight_desired,
-    daily_rate,
-  } = user;
+  const { name, blood, height, age, weightCurrent, weightDesired, dailyRate } =
+    user;
   const token = jwt.sign({ id: user._id }, process.env.SECRET, {
     expiresIn: "1d",
   });
   await User.findByIdAndUpdate(user._id, { token });
+
+  const dateCurrent = new Date().toISOString().split("T")[0];
+  const todaySummary = await Summary.findOne({
+    userId: user._id,
+    date: {
+      $gte: new Date(`${dateCurrent}T00:00:00.000Z`),
+      $lte: new Date(`${dateCurrent}T23:59:59.999Z`),
+    },
+  });
 
   res.json({
     token,
@@ -91,10 +96,11 @@ router.post("/login", async (req, res) => {
       blood,
       height,
       age,
-      weight_current,
-      weight_desired,
-      daily_rate,
+      weightCurrent,
+      weightDesired,
+      dailyRate,
     },
+    todaySummary,
   });
 });
 
@@ -122,9 +128,9 @@ router.get("/current", auth, async (req, res, next) => {
     blood,
     height,
     age,
-    weight_current,
-    weight_desired,
-    daily_rate,
+    weightCurrent,
+    weightDesired,
+    dailyRate,
   } = req.user;
   res.status(200).json({
     email,
@@ -132,9 +138,9 @@ router.get("/current", auth, async (req, res, next) => {
     blood,
     height,
     age,
-    weight_current,
-    weight_desired,
-    daily_rate,
+    weightCurrent,
+    weightDesired,
+    dailyRate,
   });
   // next();
 });

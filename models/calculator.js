@@ -1,27 +1,65 @@
-const Days = require("../schemas/products");
+const User = require("../schemas/users");
 const Summary = require("../schemas/summary");
+
+const { getUnhealthyList } = require("./products");
 
 const calculator = async (body, userId) => {
   try {
-      const { age, height, weight_desired, weight_current } = body;
-      const dailyRate =
-        10 * weight_current +
-        6.25 * height -
-        5 * age -
-        161 -
-        10 * (weight_current - weight_desired);
-;
-      const sumObject = {
-        date: new Date,
-        user_id: userId,
-        daily_rate: dailyRate,
-        left: dailyRate,
-        consumed:0,
-        percentage_of_normal: 0,
-      };
-    const newSummary = await Summary.create(sumObject);
-    newSummary.save();
-    return newSummary;
+    const { age, blood, height, weightDesired, weightCurrent } = body;
+    const dataUnHealthyList = await getUnhealthyList(blood, {
+      page: 1,
+      limit: 4,
+    });
+    const notAllowedProducts = dataUnHealthyList.products.map(
+      (product) => product.title
+    );
+    const dailyRate =
+      10 * weightCurrent +
+      6.25 * height -
+      5 * age -
+      161 -
+      10 * (weightCurrent - weightDesired);
+    const dataUpdate = {
+      blood,
+      height,
+      age,
+      weightCurrent,
+      weightDesired,
+      dailyRate,
+      notAllowedProducts,
+    };
+    const userUpdate = await User.findOneAndUpdate(
+      { _id: userId },
+      dataUpdate,
+      {
+        new: true,
+      }
+    );
+    userUpdate.save();
+    const dataSummaryUpdate = {
+      dailyRate,
+      left: dailyRate,
+    };
+    const dateCurrent = new Date().toISOString().split("T")[0];
+    const summaryUpdate = await Summary.findOneAndUpdate(
+      {
+        userId,
+        date: {
+          $gte: new Date(`${dateCurrent}T00:00:00.000Z`),
+          $lte: new Date(`${dateCurrent}T23:59:59.999Z`),
+        },
+      },
+      dataSummaryUpdate,
+      {
+        new: true,
+      }
+    );
+    summaryUpdate.save();
+    return {
+      user: userUpdate,
+      notHealthy: dataUnHealthyList,
+      summary: summaryUpdate,
+    };
   } catch (error) {
     console.error("database error:", error);
   }
