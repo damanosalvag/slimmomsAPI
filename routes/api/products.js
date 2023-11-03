@@ -2,7 +2,13 @@ const express = require("express");
 // const Joi = require("joi");
 const auth = require("../../config/auth.js");
 
-const { listProducts, getUnhealthyList } = require("../../models/products.js");
+const {
+  listProducts,
+  getUnhealthyList,
+} = require("../../controllers/products.js");
+const {
+  calculatorPublic,
+} = require("../../controllers/calculator.js");
 
 const router = express.Router();
 
@@ -126,5 +132,16 @@ router.get("/unhealthy", auth, async (req, res) => {
 //     }
 //   }
 // );
+router.post("/", async (req, res) => {
+  try {
+    const result = await calculatorPublic(req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(400).json({ message: "Invalid data" });
+    }
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 module.exports = router;

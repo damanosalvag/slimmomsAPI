@@ -3,7 +3,7 @@ const Joi = require("joi");
 const jwt = require("jsonwebtoken");
 const auth = require("../../config/auth.js");
 require("../../config/config-passport.js");
-const { calculator } = require("../../models/calculator.js");
+const { calculator } = require("../../controllers/calculator.js");
 
 const User = require("../../schemas/users.js");
 const Summary = require("../../schemas/summary.js");

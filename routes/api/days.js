@@ -2,7 +2,7 @@ const express = require("express");
 // const Joi = require("joi");
 const auth = require("../../config/auth.js");
 
-const { addProduct } = require("../../models/days.js");
+const { addProduct } = require("../../controllers/days.js");
 
 const router = express.Router();
 

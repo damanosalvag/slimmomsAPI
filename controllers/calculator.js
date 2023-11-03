@@ -3,6 +3,32 @@ const Summary = require("../schemas/summary");
 
 const { getUnhealthyList } = require("./products");
 
+const calculatorPublic = async (body) => {
+  try {
+    const { age, blood, height, weightDesired, weightCurrent } = body;
+    const dataUnHealthyList = await getUnhealthyList(blood, {
+      page: 1,
+      limit: 4,
+    });
+    const notAllowedProducts = dataUnHealthyList.products.map(
+      (product) => product.title
+    );
+    const dailyRate =
+      10 * weightCurrent +
+      6.25 * height -
+      5 * age -
+      161 -
+      10 * (weightCurrent - weightDesired);
+   
+    return {
+      dailyRate,
+      notHealthy: notAllowedProducts,
+    };
+  } catch (error) {
+    console.error("database error:", error);
+  }
+ }
+
 const calculator = async (body, userId) => {
   try {
     const { age, blood, height, weightDesired, weightCurrent } = body;
@@ -67,4 +93,5 @@ const calculator = async (body, userId) => {
 
 module.exports = {
   calculator,
+  calculatorPublic,
 };
