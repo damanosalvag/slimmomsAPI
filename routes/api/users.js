@@ -75,7 +75,7 @@ router.post("/login", async (req, res) => {
   const { name, blood, height, age, weightCurrent, weightDesired, dailyRate } =
     user;
   const token = jwt.sign({ id: user._id }, process.env.SECRET, {
-    expiresIn: "1d",
+    expiresIn: "1h",
   });
   await User.findByIdAndUpdate(user._id, { token });
 
@@ -104,43 +104,36 @@ router.post("/login", async (req, res) => {
   });
 });
 
-// router.get("/logout", auth, async (req, res) => {
-//   const { _id } = req.user;
-//   try {
-//     const response = await User.updateOne({ _id }, { token: null });
-//     if (response.acknowledged) {
-//       if (response.modifiedCount === 0) {
-//         return res.json({ message: "The user has been loggead out" });
-//       } else {
-//         console.log("user logout");
-//         return res.status(204).end();
-//       }
-//     }
-//   } catch (error) {
-//     res.status(500).json({ message: error });
-//   }
-// });
+router.get("/logout", auth, async (req, res) => {
+  const { _id } = req.user;
+  try {
+    const response = await User.updateOne({ _id }, { token: null, isLoggedIn: false });
+    if (response.acknowledged) {
+      if (response.modifiedCount === 0) {
+        return res.json({ message: "The user has been loggead out" });
+      } else {
+        console.log("user logout");
+        return res.status(204).end();
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ message: error });
+  }
+});
 
 router.get("/current", auth, async (req, res, next) => {
-  const {
-    email,
-    name,
-    blood,
-    height,
-    age,
-    weightCurrent,
-    weightDesired,
-    dailyRate,
-  } = req.user;
+  const { _id, email, name } = req.user;
+  console.log();
+  const newToken = jwt.sign({ id: _id }, process.env.SECRET, {
+    expiresIn: "1h",
+  });
+  const oldToken = req.headers.authorization.split(" ");
+  await User.findByIdAndUpdate(_id, { token: newToken });
   res.status(200).json({
     email,
     name,
-    blood,
-    height,
-    age,
-    weightCurrent,
-    weightDesired,
-    dailyRate,
+    prevToken: oldToken[1],
+    newToken,
   });
   // next();
 });
@@ -153,6 +146,19 @@ router.patch("/calculator", auth, async (req, res) => {
       return res.status(400).json({ message: "Invalid contact ID" });
     }
     res.status(500).json({ error: "Server error" });
+  }
+});
+router.get("/", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    res.json(user);
+  } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(400).json({ message: "Invalid userID" });
+    }
+    res
+      .status(500)
+      .json({ error: `Server error type: ${error.name}` });
   }
 });
 

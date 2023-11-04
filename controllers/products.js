@@ -1,9 +1,17 @@
 const Products = require("../schemas/products");
 const { filterProducts } = require("./filters");
 
-const listProducts = async (query) => {
+const listProducts = async (typeBlood, query) => {
   try {
-    const data = await Products.find(query);
+    const healthyProducts = (await Products.find({
+      [`groupBloodNotAllowed.${typeBlood}`]: false,
+    })) || {
+      message: "products, no found",
+    };
+    console.log(query);
+    const data = healthyProducts.filter((product) =>
+      product.title.includes(query)
+    );
     return data;
   } catch (error) {
     console.error("database error:", error);
@@ -26,17 +34,6 @@ const getUnhealthyList = async (typeBlood, query) => {
 //   newContact.save();
 //   return newContact;
 // };
-// const removeContact = async (contactId, ownerId) => {
-//   const removedContact = await Contact.findOneAndRemove({
-//     _id: contactId,
-//     owner: ownerId,
-//   });
-//   const response = removedContact
-//     ? { removedContact, message: "Contact deleted" }
-//     : { message: "Contact, no found" };
-//   return response;
-// };
-
 // const updateContact = async (contactId, dataUpdate, ownerId) => {
 //   const updatedContact = await Contact.findOneAndUpdate(
 //     { _id: contactId, owner: ownerId },
@@ -67,8 +64,4 @@ const getUnhealthyList = async (typeBlood, query) => {
 module.exports = {
   listProducts,
   getUnhealthyList,
-  // removeContact,
-  // addContact,
-  // updateContact,
-  // updateStatusContact,
 };

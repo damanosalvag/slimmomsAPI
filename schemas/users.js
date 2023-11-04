@@ -36,10 +36,14 @@ const userSchema = new Schema({
     type: Number,
     default: 2000,
   },
-  notAllowedProducts:[String],
+  notAllowedProducts: [String],
   token: {
     type: String,
     default: null,
+  },
+  isLoggedIn: {
+    type: Boolean,
+    default: true,
   },
 });
 
