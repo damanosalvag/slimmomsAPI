@@ -16,9 +16,9 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/users", usersRouter);
-app.use("/api/products", productsRouter);
+app.use("/api/", productsRouter);
 app.use("/api/days", daysRouter);
-app.use("/api/calculator", productsRouter);
+
 
 app.use((req, res) => {
   res.status(404).json({ message: "Not found" });
