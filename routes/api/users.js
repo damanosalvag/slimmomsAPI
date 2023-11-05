@@ -3,26 +3,32 @@ const Joi = require("joi");
 const jwt = require("jsonwebtoken");
 const auth = require("../../config/auth.js");
 require("../../config/config-passport.js");
+const { calculator } = require("../../controllers/calculator.js");
 
 const User = require("../../schemas/users.js");
+const Summary = require("../../schemas/summary.js");
 
 const router = express.Router();
 
-const schemaEmailPassword = Joi.object({
+const schemaSignUp = Joi.object({
+  name: Joi.string().min(3).max(30).required(),
   email: Joi.string().email().required(),
   password: Joi.string()
     .min(8)
     .max(20)
     .regex(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).*$/)
     .required(),
+  confirmPassword: Joi.string().valid(Joi.ref("password")).required(),
 });
 
 const validateEmailPassword = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    await schemaEmailPassword.validateAsync({
+    const { name, email, password, confirmPassword } = req.body;
+    await schemaSignUp.validateAsync({
+      name,
       email,
       password,
+      confirmPassword,
     });
     next();
   } catch (error) {
@@ -35,20 +41,22 @@ const validateEmailPassword = async (req, res, next) => {
 };
 
 router.post("/signup", validateEmailPassword, async (req, res) => {
-  const { email, password } = req.body;
+  const { name, email, password } = req.body;
   console.log("body", req.body);
   const user = await User.findOne({ email });
   if (user) {
     return res.status(409).json({ message: "Email in use" });
   }
   try {
-    const newUser = new User({ email });
+    const newUser = new User({ name, email });
     newUser.setPassword(password);
     await newUser.save();
+    const newSummary = new Summary({ date: new Date(), userId: newUser._id });
+    await newSummary.save();
     res.status(201).json({
       user: {
+        name,
         email,
-        subscription: "starter",
       },
     });
   } catch (error) {
@@ -57,32 +65,49 @@ router.post("/signup", validateEmailPassword, async (req, res) => {
   }
 });
 
-router.post("/login", validateEmailPassword, async (req, res) => {
+router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   const user = await User.findOne({ email });
   if (!user || !user.checkPassword(password)) {
     return res.status(401).json({ message: "Email or password is wrong" });
   }
-
+  const { name, blood, height, age, weightCurrent, weightDesired, dailyRate } =
+    user;
   const token = jwt.sign({ id: user._id }, process.env.SECRET, {
-    expiresIn: "1d",
+    expiresIn: "1h",
   });
   await User.findByIdAndUpdate(user._id, { token });
+
+  const dateCurrent = new Date().toISOString().split("T")[0];
+  const todaySummary = await Summary.findOne({
+    userId: user._id,
+    date: {
+      $gte: new Date(`${dateCurrent}T00:00:00.000Z`),
+      $lte: new Date(`${dateCurrent}T23:59:59.999Z`),
+    },
+  });
 
   res.json({
     token,
     user: {
+      name,
       email,
-      subscription: "starter",
+      blood,
+      height,
+      age,
+      weightCurrent,
+      weightDesired,
+      dailyRate,
     },
+    todaySummary,
   });
 });
 
 router.get("/logout", auth, async (req, res) => {
   const { _id } = req.user;
   try {
-    const response = await User.updateOne({ _id }, { token: null });
+    const response = await User.updateOne({ _id }, { token: null, isLoggedIn: false });
     if (response.acknowledged) {
       if (response.modifiedCount === 0) {
         return res.json({ message: "The user has been loggead out" });
@@ -97,9 +122,44 @@ router.get("/logout", auth, async (req, res) => {
 });
 
 router.get("/current", auth, async (req, res, next) => {
-  const { email, subscription } = req.user;
-  res.status(200).json({ email, subscription });
-  next();
+  const { _id, email, name } = req.user;
+  console.log();
+  const newToken = jwt.sign({ id: _id }, process.env.SECRET, {
+    expiresIn: "1h",
+  });
+  const oldToken = req.headers.authorization.split(" ");
+  await User.findByIdAndUpdate(_id, { token: newToken });
+  res.status(200).json({
+    email,
+    name,
+    prevToken: oldToken[1],
+    newToken,
+  });
+  // next();
+});
+router.patch("/calculator", auth, async (req, res) => {
+  try {
+    const result = await calculator(req.body, req.user._id);
+    res.status(201).json(result);
+  } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(400).json({ message: "Invalid contact ID" });
+    }
+    res.status(500).json({ error: "Server error" });
+  }
+});
+router.get("/", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    res.json(user);
+  } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(400).json({ message: "Invalid userID" });
+    }
+    res
+      .status(500)
+      .json({ error: `Server error type: ${error.name}` });
+  }
 });
 
 module.exports = router;

@@ -2,6 +2,7 @@ const { Schema, model } = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 const userSchema = new Schema({
+  name: { type: String, required: [true, "Name is required"], default: "User" },
   password: {
     type: String,
     required: [true, "Password is required"],
@@ -11,14 +12,38 @@ const userSchema = new Schema({
     required: [true, "Email is required"],
     unique: true,
   },
-  subscription: {
-    type: String,
-    enum: ["starter", "pro", "business"],
-    default: "starter",
+  blood: {
+    type: Number,
+    default: 1,
   },
+  height: {
+    type: Number,
+    default: 170,
+  },
+  age: {
+    type: Number,
+    default: 30,
+  },
+  weightCurrent: {
+    type: Number,
+    default: 100,
+  },
+  weightDesired: {
+    type: Number,
+    default: 70,
+  },
+  dailyRate: {
+    type: Number,
+    default: 2000,
+  },
+  notAllowedProducts: [String],
   token: {
     type: String,
     default: null,
+  },
+  isLoggedIn: {
+    type: Boolean,
+    default: true,
   },
 });
 
