@@ -3,6 +3,7 @@ const Days = require("../schemas/days");
 const Product = require("../schemas/products");
 const Summary = require("../schemas/summary");
 const moment = require("moment-timezone");
+const ObjectId = mongoose.Types.ObjectId;
 // const { findById } = require("../schemas/users");
 
 const addProduct = async (body, userId) => {
@@ -69,15 +70,13 @@ const getDayInfo = async (body, userId) => {
       .tz(new Date(`${body.date}T23:59:59.999`), "America/Bogota")
       .utc(),
   };
-  const dataDay = await Days.findOne({ date: dayRange, userId });
   const dataSummary = await Summary.findOne({ date: dayRange, userId });
-  console.log(dataDay.productsId);
-  const getProductsAllowed = dataDay.productsId.map((idProduct) =>
-    Product.findById(idProduct)
+  
+  const dataDay = await Days.findOne({ date: dayRange, userId });
+  const getProductsAllowed = dataDay.productsId.map((product) =>
+    Product.findById(product.foodId)
   );
   const getAllowed = await Promise.all(getProductsAllowed);
-
-  // Procesar las respuestas
   const data = await Promise.all(getAllowed.map((product) => product.toJSON()));
   return {
     idDay: dataDay._id,
@@ -89,7 +88,6 @@ const getDayInfo = async (body, userId) => {
 const removeProduct = async ({ dayId, productId, sumId }) => {
   const tempDay = await Days.findById(dayId);
   const tempDayProducts = tempDay.productsId;
-  const ObjectId = mongoose.Types.ObjectId;
   const productToRemove = tempDayProducts.find((product) =>
     product.foodId.equals(new ObjectId(productId))
   );
