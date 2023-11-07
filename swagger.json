@@ -382,7 +382,7 @@
       }
     },
     "/days/info": {
-      "get": {
+      "post": {
         "tags": ["Day"],
         "summary": "Get info for day",
         "security": [{ "Bearer": [] }],
