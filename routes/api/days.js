@@ -29,7 +29,7 @@ router.delete("/", auth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router.get("/info", auth, async (req, res) => {
+router.post("/info", auth, async (req, res) => {
   try {
     const dayInfo = await getDayInfo(req.body, req.user._id);
     res.status(201).json(dayInfo);
