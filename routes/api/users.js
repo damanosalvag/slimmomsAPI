@@ -53,6 +53,8 @@ router.post("/signup", validateEmailPassword, async (req, res) => {
     await newUser.save();
     const newSummary = new Summary({ date: new Date(), userId: newUser._id });
     await newSummary.save();
+    newUser.summaryId = newSummary._id;
+    await newUser.save();
     res.status(201).json({
       user: {
         name,
@@ -72,7 +74,7 @@ router.post("/login", async (req, res) => {
   if (!user || !user.checkPassword(password)) {
     return res.status(401).json({ message: "Email or password is wrong" });
   }
-  const { name, blood, height, age, weightCurrent, weightDesired, dailyRate } =
+  const { name, blood, height, age, weightCurrent, weightDesired, dailyRate, summaryId } =
     user;
   const token = jwt.sign({ id: user._id }, process.env.SECRET, {
     expiresIn: "1h",
@@ -80,13 +82,18 @@ router.post("/login", async (req, res) => {
   await User.findByIdAndUpdate(user._id, { token });
 
   const dateCurrent = new Date().toISOString().split("T")[0];
-  const todaySummary = await Summary.findOne({
-    userId: user._id,
-    date: {
-      $gte: new Date(`${dateCurrent}T00:00:00.000Z`),
-      $lte: new Date(`${dateCurrent}T23:59:59.999Z`),
-    },
-  });
+  const todaySummary =
+    (await Summary.findOne({
+      userId: user._id,
+      date: {
+        $gte: new Date(`${dateCurrent}T00:00:00.000Z`),
+        $lte: new Date(`${dateCurrent}T23:59:59.999Z`),
+      },
+    })) ??
+    (await Summary.findOne({
+      userId: user._id,
+      _id: summaryId,
+    }));
 
   res.json({
     token,
@@ -107,7 +114,10 @@ router.post("/login", async (req, res) => {
 router.get("/logout", auth, async (req, res) => {
   const { _id } = req.user;
   try {
-    const response = await User.updateOne({ _id }, { token: null, isLoggedIn: false });
+    const response = await User.updateOne(
+      { _id },
+      { token: null, isLoggedIn: false }
+    );
     if (response.acknowledged) {
       if (response.modifiedCount === 0) {
         return res.json({ message: "The user has been loggead out" });
@@ -156,9 +166,7 @@ router.get("/", auth, async (req, res) => {
     if (error.name === "CastError") {
       return res.status(400).json({ message: "Invalid userID" });
     }
-    res
-      .status(500)
-      .json({ error: `Server error type: ${error.name}` });
+    res.status(500).json({ error: `Server error type: ${error.name}` });
   }
 });
 
