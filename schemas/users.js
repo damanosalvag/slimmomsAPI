@@ -41,6 +41,10 @@ const userSchema = new Schema({
     type: String,
     default: null,
   },
+  summaryId: {
+    type: Schema.Types.ObjectId,
+    default: null,
+  },
   isLoggedIn: {
     type: Boolean,
     default: true,
