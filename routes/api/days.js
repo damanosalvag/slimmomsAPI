@@ -9,6 +9,7 @@ const {
 } = require("../../controllers/days.js");
 
 const router = express.Router();
+console.log();
 
 router.patch("/", auth, async (req, res) => {
   try {
