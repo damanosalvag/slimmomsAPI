@@ -68,7 +68,8 @@ const getDayInfo = async (body, userId) => {
   const data = await Promise.all(getAllowed.map((product) => product.toJSON()));
   return {
     idDay: dataDay._id,
-    eatenProducts: data,
+    addedProducts: dataDay.productsId,
+    eatenProductsDetails: data,
     date: body.date,
     daySummary: dataSummary,
   };
