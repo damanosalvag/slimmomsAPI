@@ -83,13 +83,10 @@ const calculator = async (body, userId) => {
     await Day.findOneAndUpdate(
       {
         userId,
-        date: {
-          $gte: new Date(`${dateCurrent}T00:00:00.000Z`),
-          $lte: new Date(`${dateCurrent}T23:59:59.999Z`),
-        },
+        date: dateCurrent,
       },
       {
-        date: new Date(),
+        date: new Date().toISOString().split("T")[0],
         userId,
         productsId: [],
         sumId: summaryUpdate._id,

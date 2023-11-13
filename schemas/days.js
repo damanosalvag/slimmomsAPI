@@ -3,7 +3,7 @@ const { Schema, model } = require("mongoose");
 const daySchema = new Schema(
   {
     date: {
-      type: Date,
+      type: String,
     },
     productsId: [
       {
