@@ -4,7 +4,6 @@ const Product = require("../schemas/products");
 const Summary = require("../schemas/summary");
 const ObjectId = mongoose.Types.ObjectId;
 
-
 const addProduct = async (body, userId) => {
   try {
     const { date, productId, weight: amount } = body;
@@ -57,10 +56,10 @@ const addProduct = async (body, userId) => {
   }
 };
 const getDayInfo = async (body, userId) => {
-
-  const dataSummary = await Summary.findOne({ date: body.date, userId });
   
   const dataDay = await Days.findOne({ date: body.date, userId });
+  const { sumId } = dataDay;
+  const dataSummary = await Summary.findOne({ _id: sumId, userId });
   const getProductsAllowed = dataDay.productsId.map((product) =>
     Product.findById(product.foodId)
   );
