@@ -2,7 +2,7 @@ const { Schema, model } = require("mongoose");
 
 const summarySchema = new Schema(
   {
-    date: Date,
+    date: String,
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",

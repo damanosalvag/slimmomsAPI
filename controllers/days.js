@@ -2,21 +2,16 @@ const mongoose = require("mongoose");
 const Days = require("../schemas/days");
 const Product = require("../schemas/products");
 const Summary = require("../schemas/summary");
-const moment = require("moment-timezone");
 const ObjectId = mongoose.Types.ObjectId;
-// const { findById } = require("../schemas/users");
+
 
 const addProduct = async (body, userId) => {
   try {
     const { date, productId, weight: amount } = body;
-    const dayCurrent = {
-      $gte: moment.tz(new Date(`${date}T00:00:00.000`), "America/Bogota").utc(),
-      $lte: moment.tz(new Date(`${date}T23:59:59.999`), "America/Bogota").utc(),
-    };
     const dataProduct = await Product.findById(productId);
     const { _id, weight, calories, title, groupBloodNotAllowed } = dataProduct;
 
-    const daySummary = await Summary.findOne({ date: dayCurrent, userId });
+    const daySummary = await Summary.findOne({ date, userId });
     const { _id: sumId, left, consumed, dailyRate } = daySummary;
 
     const caloriesPerAmount = Math.ceil((amount / weight) * calories);
@@ -39,7 +34,7 @@ const addProduct = async (body, userId) => {
     const dataDay = await Days.findOneAndUpdate(
       {
         userId,
-        date: dayCurrent,
+        date,
       },
       dataDayUpdate,
       {
@@ -62,17 +57,10 @@ const addProduct = async (body, userId) => {
   }
 };
 const getDayInfo = async (body, userId) => {
-  const dayRange = {
-    $gte: moment
-      .tz(new Date(`${body.date}T00:00:00.000`), "America/Bogota")
-      .utc(),
-    $lte: moment
-      .tz(new Date(`${body.date}T23:59:59.999`), "America/Bogota")
-      .utc(),
-  };
-  const dataSummary = await Summary.findOne({ date: dayRange, userId });
+
+  const dataSummary = await Summary.findOne({ date: body.date, userId });
   
-  const dataDay = await Days.findOne({ date: dayRange, userId });
+  const dataDay = await Days.findOne({ date: body.date, userId });
   const getProductsAllowed = dataDay.productsId.map((product) =>
     Product.findById(product.foodId)
   );

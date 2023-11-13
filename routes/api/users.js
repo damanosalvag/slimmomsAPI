@@ -51,7 +51,10 @@ router.post("/signup", validateEmailPassword, async (req, res) => {
     const newUser = new User({ name, email });
     newUser.setPassword(password);
     await newUser.save();
-    const newSummary = new Summary({ date: new Date(), userId: newUser._id });
+    const newSummary = new Summary({
+      date: new Date().toISOString().split("T")[0],
+      userId: newUser._id,
+    });
     await newSummary.save();
     newUser.summaryId = newSummary._id;
     await newUser.save();
@@ -85,10 +88,7 @@ router.post("/login", async (req, res) => {
   const todaySummary =
     (await Summary.findOne({
       userId: user._id,
-      date: {
-        $gte: new Date(`${dateCurrent}T00:00:00.000Z`),
-        $lte: new Date(`${dateCurrent}T23:59:59.999Z`),
-      },
+      date: dateCurrent,
     })) ??
     (await Summary.findOne({
       userId: user._id,
