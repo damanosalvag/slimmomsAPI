@@ -5,6 +5,7 @@ const auth = require("../../config/auth.js");
 const {
   listProducts,
   getUnhealthyList,
+  productById,
 } = require("../../controllers/products.js");
 const { calculatorPublic } = require("../../controllers/calculator.js");
 
@@ -21,6 +22,22 @@ router.get("/products", auth, async (req, res) => {
     res.status(500).json({ error: "Error en el servidor" });
   }
 });
+router.get("/products/:id", auth, async (req, res) => {
+  try {
+    const idParams = req.params.id;
+    console.log(idParams);
+    const product = await productById(idParams);
+    const objectProduct = product[0];
+    console.log(objectProduct);
+    res.json(objectProduct);
+  } catch (error) {
+    console.error("Error in route /:", error);
+    res.status(500).json({ error: "Error en el servidor" });
+  }
+});
+
+
+
 router.get("products/unhealthy", auth, async (req, res) => {
   try {
     const notHealtyList = await getUnhealthyList(req.user.blood, req.query);

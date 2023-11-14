@@ -1,6 +1,7 @@
 const User = require("../schemas/users");
 const Summary = require("../schemas/summary");
 const Day = require("../schemas/days");
+const moment = require("moment-timezone");
 
 const { getUnhealthyList } = require("./products");
 
@@ -62,13 +63,13 @@ const calculator = async (body, userId) => {
         new: true,
       }
     );
-    userUpdate.save();
     const dataSummaryUpdate = {
       dailyRate,
       left: dailyRate,
       consumed: 0,
     };
-    const dateCurrent = new Date().toISOString().split("T")[0];
+    const dateCurrent = new Date();
+    const currentDateBogota = moment(dateCurrent).tz("America/Bogota");
     const summaryUpdate = await Summary.findOneAndUpdate(
       {
         userId,
@@ -79,14 +80,14 @@ const calculator = async (body, userId) => {
         new: true,
       }
     );
-    summaryUpdate.save();
+
     await Day.findOneAndUpdate(
       {
         userId,
-        date: dateCurrent,
+        date: currentDateBogota.format('YYYY-MM-DD'),
       },
       {
-        date: new Date().toISOString().split("T")[0],
+        date: currentDateBogota.format('YYYY-MM-DD'),
         userId,
         productsId: [],
         sumId: summaryUpdate._id,

@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const auth = require("../../config/auth.js");
 require("../../config/config-passport.js");
 const { calculator } = require("../../controllers/calculator.js");
+const moment = require("moment-timezone");
 
 const User = require("../../schemas/users.js");
 const Summary = require("../../schemas/summary.js");
@@ -51,8 +52,10 @@ router.post("/signup", validateEmailPassword, async (req, res) => {
     const newUser = new User({ name, email });
     newUser.setPassword(password);
     await newUser.save();
+    const currentDate = new Date();
+    const currentDateBogota = moment(currentDate).tz("America/Bogota");
     const newSummary = new Summary({
-      date: new Date().toISOString().split("T")[0],
+      date: currentDateBogota.format("YYYY-MM-DD"),
       userId: newUser._id,
     });
     await newSummary.save();
@@ -77,18 +80,28 @@ router.post("/login", async (req, res) => {
   if (!user || !user.checkPassword(password)) {
     return res.status(401).json({ message: "Email or password is wrong" });
   }
-  const { name, blood, height, age, weightCurrent, weightDesired, dailyRate, summaryId } =
-    user;
+  const {
+    name,
+    blood,
+    height,
+    age,
+    weightCurrent,
+    weightDesired,
+    dailyRate,
+    summaryId,
+  } = user;
   const token = jwt.sign({ id: user._id }, process.env.SECRET, {
     expiresIn: "1h",
   });
   await User.findByIdAndUpdate(user._id, { token });
 
-  const dateCurrent = new Date().toISOString().split("T")[0];
+  const currentDate = new Date();
+  const currentDateBogota = moment(currentDate).tz("America/Bogota");
+
   const todaySummary =
     (await Summary.findOne({
       userId: user._id,
-      date: dateCurrent,
+      date: currentDateBogota.format("YYYY-MM-DD"),
     })) ??
     (await Summary.findOne({
       userId: user._id,
